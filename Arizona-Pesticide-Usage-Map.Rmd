@@ -1,36 +1,196 @@
 ---
 title: "Arizona-Pesticide-Usage-Map"
+runtime: shiny
 output: 
   flexdashboard::flex_dashboard:
-    orientation: columns
+    orientation: rows
     vertical_layout: fill
+    social: menu
+    source_code: embed
+    # https://github.com/walkerke/neighborhood_diversity
+    theme: cerulean
 ---
 
 ```{r setup, include=FALSE}
-library(flexdashboard)
+pacman::p_load(flexdashboard, shiny, shinythemes,leaflet, leafpop, leafem, sp, mapview, dplyr, ggplot2, plotly, scales)
+
+counties <- c("APACHE", "COCHISE","COCONINO", "GILA", "GRAHAM", "GREENLEE", "LA PAZ",
+                        "MARICOPA", "MOHAVE", "NAVAJO", "PIMA","PINAL", "SANTA CRUZ", "YAVAPAI",
+                        "YUMA")
+
+ingredients <- c("BENSULIDE", "CHLORPYRIFOS",
+                        "METHOMYL", "ACEPHATE","DIMETHOATE","MALATHION",
+                        "PERMETHRIN","LAMBDA-CYHALOTHRIN", "ZETA-CYPERMETHRIN","DIAZINON",
+                        "BIFENTHRIN","CARBARYL","METHYL PARATHION","ESFENVALERATE",
+                        "TRIBUFOS", "ALDICARB", "OXAMYL", "FENPROPATHRIN", "ETHEPHON",
+                        "BETA-CYFLUTHRIN")
+
+
+# Read in data, and subset for the selected county
+data <- readRDS(file = "./data/cleaned_pesticides.rds")
+year <- read.csv(file ="./data/total_yearly.csv")
+month <- read.csv(file ="./data/total_monthly.csv")
+
+dat <- reactive({
+
+  data %>% dplyr::filter(year== as.character(input$year) & County == as.character(input$county) & Active.Ingredient.new == input$ingredient)
+  
+})
+
+yearly <- reactive({
+
+  year %>% dplyr::filter(County == input$county)
+  
+})
+
+monthly <- reactive({
+
+  month %>% dplyr::filter(County == input$county & year == input$year & Active.Ingredient.new == input$ingredient)
+  
+})
+
 ```
 
-Column {data-width=650}
------------------------------------------------------------------------
 
-### Chart A
+Sidebar {.sidebar}
+======================================================================
+
+```{r}
+tags$br()
+# Define inputs
+# select county
+selectInput(
+            inputId = "county",
+            label = "Select a county",
+            choices = counties,
+            selected = "YUMA",
+            multiple = FALSE)
+                                      
+# select ingredient
+selectInput(
+            inputId = "ingredient",
+            label = "Select an ingredient",
+            choices = ingredients,
+            selected = "CHLORPYRIFOS",
+            multiple = FALSE)
+                                      
+# Year
+# select mode
+selectInput(
+            inputId = "year",
+            label = "Year",
+            choices = 1992:2016,
+            selected = 2006,
+            multiple = FALSE)
+                                      
+# select metric
+selectInput(
+            inputId = "metric",
+            label = "Select metric",
+            choices = c("Area","Amount"),
+            selected = "Amount",
+            multiple = FALSE)
+
+```
+
+Use the __Explore county__ tab to explore neighborhood diversity for your chosen metropolitan area in 2020.  The red line on the scatterplot represents a locally-weighted estimate of how diversity varies in the metropolitan area by distance from its urban core or cores.  Click and drag on the scatterplot to highlight the corresponding Census tracts on the map below, and click on a Census tract on the map to generate a chart of race and ethnicity counts. To learn more about the project, click the __About__ tab.  
+
+Author: [Tuo Liu](https://tuo-liu.netlify.app)
+
+Data sources: [NHGIS](https://nhgis.org), United States Census Bureau
+
+Explore county
+======================================================================
+
+Row
+----------------------------------------------------------------------
+
+### Pestcide use
 
 ```{r}
 
 ```
 
-Column {data-width=350}
------------------------------------------------------------------------
 
-### Chart B
-
-```{r}
-
-```
-
-### Chart C
+Row
+-------------------------------------
+### Yearly pesticide usage
 
 ```{r}
+# Here, we draw the yearly usage scatter plot with ggplotly
+output$scatter <- renderPlotly({
+  
+  m <- yearly() %>%
+    mutate(text = glue::glue(
+      "Year: {year}<br>Total: {round(total, 2)}"
+    ))
+  
+  p2a <- ggplot(data=m, aes(year %>% as.factor(), total, text=text)) +
+                        geom_point() + 
+                        geom_line(group=0) +
+                        xlab("Year") + ylab("Total pesticide usage (lbs)") +
+                        theme(axis.text.x = element_text(angle = 45)) 
+    
+  g <- ggplotly(p2a, source = 'source', tooltip = "text") %>% 
+    layout(dragmode = 'lasso', 
+           yaxis = list(title = 'Yearly total usage (lbs)'), 
+           margin = list(l = 100), 
+           font = list(family = 'Open Sans', size = 16)) %>%
+    event_register("plotly_selecting")
+  
+})  
 
+plotlyOutput('scatter', width = "80%")
 ```
+
+### Monthly pesticide usage 
+
+```{r}
+# Here, we draw the yearly usage scatter plot with ggplotly
+output$scatter <- renderPlotly({
+  
+  m <- yearly() %>%
+    mutate(text = glue::glue(
+      "Year: {year}<br>Total: {round(total, 2)}"
+    ))
+  
+  p2a <- ggplot(data=m, aes(year %>% as.factor(), total, text=text)) +
+                        geom_point() + 
+                        geom_line(group=0) +
+                        xlab("Year") + ylab("Total pesticide usage (lbs)") +
+                        theme(axis.text.x = element_text(angle = 45)) 
+    
+  g <- ggplotly(p2a, source = 'source', tooltip = "text") %>% 
+    layout(dragmode = 'lasso', 
+           yaxis = list(title = 'Yearly total usage (lbs)'), 
+           margin = list(l = 100), 
+           font = list(family = 'Open Sans', size = 16)) %>%
+    event_register("plotly_selecting")
+  
+})  
+
+plotlyOutput('scatter', width = "80%")
+```
+
+
+
+
+
+About
+============================================================================
+
+This application is in support of the article in _Urban Studies_, ["Locating neighborhood diversity in the American Metropolis."](http://usj.sagepub.com/content/early/2016/04/29/0042098016643481.abstract)  The article analyzes geographic variations in neighborhood racial and ethnic diversity over time in large metropolitan areas in the United States.  As of August 2022, this application is updated with data from the 2020 Decennial US Census.  All data are standardized to 2010 Census tracts thanks to NHGIS.  
+
+The key metric in this article is the neighborhood-level _entropy index_ (called "diversity score" in the application), which measures the degree of neighborhood diversity for six general racial/ethnic groups: non-Hispanic white, non-Hispanic black, Hispanic, Asian/Pacific Islander, Native American.  The entropy index $E$ is calculated as follows (Farrell and Lee 2011):  
+
+
+To study how neighborhood diversity varies with distance from urban cores in the largest metropolitan areas in the United States, entropy indices are plotted against the distance from the Census tract centroids to their corresponding nearest major city hall.  Locally-weighted regression (LOESS) is then used to produce a "diversity gradient" of estimates of neighborhood diversity by distance from the city center.  
+
+This application allows visitors to explore this part of the paper interactively.  The article follows by using local exploratory spatial data analysis techniques to identify how spatial clusters of diversity have shifted over time; this will be the focus of a future application that corresponds to an extension of the study published in _Urban Studies._  
+
+Demographic data come from [the National Historical Geographic Information System](https://www.nhgis.org/)'s Time Series tables, which standardize decennial Census data from 1990 through 2020 to 2010 Census tracts.  Geographic data in the application are from the [US Census Bureau's Cartographic Boundary Files](https://www.census.gov/geo/maps-data/data/tiger-cart-boundary.html), obtained with the [R tigris package](https://walker-data.com/census-r/census-geographic-data-and-applications-in-r.html). Entropy indices are built with the [R segregation package](https://elbersb.github.io/segregation/index.html).  
+
+The application is built with the [Shiny](http://shiny.rstudio.com) framework for the [R programming language](https://www.r-project.org/). The application layout is produced with the [flexdashboard](http://rstudio.github.io/flexdashboard/index.html) package, and the charts and maps use [Plotly](http://plot.ly), [Leaflet.js](http://leafletjs.com/), [Highcharts](http://www.highcharts.com/), and [ggplot2](http://ggplot2.org/), all accessed through their corresponding R packages.  Code for the application is available at <https://github.com/walkerke/neighborhood_diversity>.  
+
+To learn more about my work, [visit my website](https://walker-data.com) or [connect with me on Twitter](https://twitter.com/kyle_e_walker).  
 
