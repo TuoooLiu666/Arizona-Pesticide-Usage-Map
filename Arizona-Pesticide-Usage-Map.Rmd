@@ -11,9 +11,12 @@ output:
     theme: cerulean
 ---
 ##making a change
-```{r setup, include=FALSE}
+```{r}
 pacman::p_load(flexdashboard, shiny, shinythemes,leaflet, leafpop, leafem, sp, mapview, dplyr, ggplot2, plotly, scales)
+```
 
+
+```{r include=FALSE}
 counties <- c("APACHE", "COCHISE","COCONINO", "GILA", "GRAHAM", "GREENLEE", "LA PAZ",
                         "MARICOPA", "MOHAVE", "NAVAJO", "PIMA","PINAL", "SANTA CRUZ", "YAVAPAI",
                         "YUMA")
