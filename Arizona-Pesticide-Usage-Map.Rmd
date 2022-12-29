@@ -1,5 +1,6 @@
 ---
 title: "Arizona-Pesticide-Usage-Map"
+author: "LT, MF"
 runtime: shiny
 output: 
   flexdashboard::flex_dashboard:
@@ -10,13 +11,10 @@ output:
     # https://github.com/walkerke/neighborhood_diversity
     theme: cerulean
 ---
-##making a change
-```{r}
-pacman::p_load(flexdashboard, shiny, shinythemes,leaflet, leafpop, leafem, sp, mapview, dplyr, ggplot2, plotly, scales)
-```
 
+```{r gloval, include=FALSE}
+pacman::p_load(flexdashboard, shiny, leaflet, leafpop, leafem, mapview, dplyr, ggplot2, plotly, scales)
 
-```{r include=FALSE}
 counties <- c("APACHE", "COCHISE","COCONINO", "GILA", "GRAHAM", "GREENLEE", "LA PAZ",
                         "MARICOPA", "MOHAVE", "NAVAJO", "PIMA","PINAL", "SANTA CRUZ", "YAVAPAI",
                         "YUMA")
@@ -36,7 +34,7 @@ month <- read.csv(file ="./data/total_monthly.csv")
 
 dat <- reactive({
 
-  data %>% dplyr::filter(year== as.character(input$year) & County == as.character(input$county) & Active.Ingredient.new == input$ingredient)
+  data %>% dplyr::filter(County == input$county & year == input$year & Active.Ingredient.new ==input$ingredient)
   
 })
 
@@ -48,10 +46,35 @@ yearly <- reactive({
 
 monthly <- reactive({
 
-  month %>% dplyr::filter(County == input$county & year == input$year & Active.Ingredient.new == input$ingredient)
+ month %>% dplyr::filter(County == input$county & year == input$year & Active.Ingredient.new ==input$ingredient)
   
 })
 
+
+# test
+# p <- month %>% dplyr::filter(County == "YUMA" & year == 2006 & Active.Ingredient.new == "CHLORPYRIFOS") %>%
+#     mutate(text = glue::glue("Month: {month}<br>Total: {round(total, 2)}")) %>%
+#     ggplot(aes(month %>% as.factor(), total)) +
+#                         geom_point() +
+#                         geom_line(group=0) +
+#                         xlab("Month") + ylab("Total pesticide usage (lbs)") +
+#                         + theme_bw(axis.text.x = element_text(angle = 45))
+# 
+# ggplotly(p, source = 'source', tooltip = "text") %>%
+#     layout(dragmode = 'lasso',
+#            yaxis = list(title = 'Total pesticide usage (lbs)'),
+#            margin = list(l = 100),
+#            font = list(family = 'Open Sans', size = 16))
+# dat <- data  %>% dplyr::filter(County == "YUMA" & year == 2006 & Active.Ingredient.new == "CHLORPYRIFOS")
+# mapview(dat,
+#           crs = 4269,
+#           grid = FALSE,
+#           zcol = "AI_amount",
+#           popup = popupTable(dat, zcol = c("year",
+#                                               "County",
+#                                               "Crop.Name",
+#                                               "Active.Ingredient.new",
+#                                               "AI_amount")))
 ```
 
 
@@ -64,7 +87,7 @@ tags$br()
 # select county
 selectInput(
             inputId = "county",
-            label = "Select a county",
+            label = "Explore county",
             choices = counties,
             selected = "YUMA",
             multiple = FALSE)
@@ -81,98 +104,95 @@ selectInput(
 # select mode
 selectInput(
             inputId = "year",
-            label = "Year",
+            label = "Explore year",
             choices = 1992:2016,
             selected = 2006,
             multiple = FALSE)
                                       
-# select metric
-selectInput(
-            inputId = "metric",
-            label = "Select metric",
-            choices = c("Area","Amount"),
-            selected = "Amount",
-            multiple = FALSE)
 
 ```
 
-Use the __Explore county__ tab to explore neighborhood diversity for your chosen metropolitan area in 2020.  The red line on the scatterplot represents a locally-weighted estimate of how diversity varies in the metropolitan area by distance from its urban core or cores.  Click and drag on the scatterplot to highlight the corresponding Census tracts on the map below, and click on a Census tract on the map to generate a chart of race and ethnicity counts. To learn more about the project, click the __About__ tab.  
+Use the __Explore county__ tab to explore yearly and month pesticide usage for your chosen AZ county in 2020.  The map presents the selected pesticide usage in targeted county in a selected year, across our sampling sites in AZ. To learn more about the project, click the __About__ tab.  
 
-Author: [Tuo Liu](https://tuo-liu.netlify.app)
+Author: [Tuo Liu](https://tuo-liu.netlify.app), [Melissa Furlong](https://live-azs-furlonglab.pantheonsite.io)
 
-Data sources: [NHGIS](https://nhgis.org), United States Census Bureau
+Data sources: [AZARG](https://live-azs-furlonglab.pantheonsite.io), Arizona ARG
 
 Explore county
 ======================================================================
 
-Row
+Row {data-height=600}
 ----------------------------------------------------------------------
 
-### Pesticide use
+### Pesticide use by geo-code
 
 ```{r}
+output$map <- renderLeaflet({
+  d <- dat() 
+ 
+  m <- mapview(d,
+          crs = 4269,
+          grid = FALSE,
+          zcol = "AI_amount",
+          popup = popupTable(d, zcol = c("year","County","Crop.Name",
+                                           "Active.Ingredient.new","AI_amount")))
+  m@map
+})
 
+leafletOutput('map')
 ```
 
 
 Row
 -------------------------------------
-### Yearly pesticide usage
 
+### Yearly pesticide usage
 ```{r}
 # Here, we draw the yearly usage scatter plot with ggplotly
-output$scatter <- renderPlotly({
-  
-  m <- yearly() %>%
-    mutate(text = glue::glue(
-      "Year: {year}<br>Total: {round(total, 2)}"
-    ))
-  
-  p2a <- ggplot(data=m, aes(year %>% as.factor(), total, text=text)) +
-                        geom_point() + 
-                        geom_line(group=0) +
-                        xlab("Year") + ylab("Total pesticide usage (lbs)") +
-                        theme(axis.text.x = element_text(angle = 45)) 
-    
-  g <- ggplotly(p2a, source = 'source', tooltip = "text") %>% 
-    layout(dragmode = 'lasso', 
-           yaxis = list(title = 'Yearly total usage (lbs)'), 
-           margin = list(l = 100), 
-           font = list(family = 'Open Sans', size = 16)) %>%
-    event_register("plotly_selecting")
-  
-})  
+output$scatter1 <- renderPlotly({
+  m1 <- yearly() %>% mutate(
+  text = glue::glue("Year: {year}<br>Total: {round(total, 2)}"))
 
-plotlyOutput('scatter', width = "80%")
+
+  p1 <- ggplot(m1, aes(year %>% as.factor(), total, text=text)) +
+                        geom_point() +
+                        geom_line(group=0) +
+                        xlab("Year") + 
+                        theme(axis.text.x = element_text(angle = 45))
+    
+
+   plotly::ggplotly(p1, source = 'source', tooltip = "text") %>%
+   layout(dragmode = 'lasso',
+   yaxis = list(title = 'Total yearly usage (lbs)'),
+   font = list(size = 16))
+})
+
+plotlyOutput('scatter1')
 ```
 
 ### Monthly pesticide usage 
-
 ```{r}
-# Here, we draw the yearly usage scatter plot with ggplotly
-output$scatter <- renderPlotly({
-  
-  m <- yearly() %>%
-    mutate(text = glue::glue(
-      "Year: {year}<br>Total: {round(total, 2)}"
-    ))
-  
-  p2a <- ggplot(data=m, aes(year %>% as.factor(), total, text=text)) +
-                        geom_point() + 
-                        geom_line(group=0) +
-                        xlab("Year") + ylab("Total pesticide usage (lbs)") +
-                        theme(axis.text.x = element_text(angle = 45)) 
-    
-  g <- ggplotly(p2a, source = 'source', tooltip = "text") %>% 
-    layout(dragmode = 'lasso', 
-           yaxis = list(title = 'Yearly total usage (lbs)'), 
-           margin = list(l = 100), 
-           font = list(family = 'Open Sans', size = 16)) %>%
-    event_register("plotly_selecting")
-  
-})  
+# Here, we draw the monthly usage scatter plot with ggplotly
+output$scatter2 <- renderPlotly({
 
-plotlyOutput('scatter', width = "80%")
+  m2 <- monthly() %>%
+    mutate(text = glue::glue(
+      "Month: {month}<br>Total: {round(total, 2)}"
+    )) %>% 
+    ggplot(aes(month %>% as.factor(), total, text=text)) +
+            geom_point() +
+            geom_line(group=0) +
+            xlab("Month") + 
+            theme(axis.text.x = element_text(angle = 45))
+
+  ggplotly(m2, source = 'source', tooltip = "text") %>%
+    layout(dragmode = 'lasso',
+           yaxis = list(title = 'Total monthly usage (lbs)'),
+           font = list(size = 16)) 
+
+})
+
+plotlyOutput('scatter2')
 ```
 
 
