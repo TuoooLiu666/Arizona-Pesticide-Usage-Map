@@ -1,0 +1,13 @@
+name: Arizona-Pesticide-Usage-Map
+title: Arizona-Pesticide-Usage-Map
+username:
+account: tuoliu
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 7955922
+bundleId: 6682120
+url: https://tuoliu.shinyapps.io/Arizona-Pesticide-Usage-Map/
+when: 1672345023.60863
+lastSyncTime: 1672345023.60863
+asMultiple: FALSE
+asStatic: FALSE
