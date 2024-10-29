@@ -200,17 +200,23 @@ plotlyOutput('scatter2')
 About
 ============================================================================
 
-This application is in support of the _Urban Studies_, ["Locating neighborhood diversity in the American Metropolis."](http://usj.sagepub.com/content/early/2016/04/29/0042098016643481.abstract)  The article analyzes geographic variations in neighborhood racial and ethnic diversity over time in large metropolitan areas in the United States.  As of August 2022, this application is updated with data from the 2020 Decennial US Census.  All data are standardized to 2010 Census tracts thanks to NHGIS.  
+Welcome to the Pesticide Use Registry map for Arizona. These data were derived from state records from the Arizona Department of Agriculture, although this mapping and data visualization project is not a product of the Arizona Department of Agriculture. We are researchers at the University of Arizona who are interested in providing information to Arizonans on pesticide use in communities.
+
+This application is in support of the _Pesticide and ADHD study_, ["Prenatal Exposure to Pesticide Mixtures and Childhood ADHD"](https://publichealth.arizona.edu/research-project/prenatal-exposure-pesticide-mixtures-and-childhood-adhd). This environmental epidemiology project is a mentored research award (K99/R00) from the National Institute of Environmental Health Sciences (NIEHS). The project's goals are to 
+1) create models of atmospheric dispersions of agricultural organophosphorus and pyrethroid pesticide applications over a 20 year period in Arizona, 
+2) to construct a case control study of ADHD in Arizona by applying a validated algorithm to Medicaid (AHCCCS) claim records, and 
+3) to examine associations between the modeled ambient pesticide concentrations during fetal/early life and ADHD. 
+
+The project also employs the use of novel mixture methods, primarily Bayesian Kernel Machine Regression, to assess the potential for mixture effects of different pesticide exposures.
 
 <!-- The key metric in this article is the neighborhood-level _entropy index_ (called "diversity score" in the application), which measures the degree of neighborhood diversity for six general racial/ethnic groups: non-Hispanic white, non-Hispanic black, Hispanic, Asian/Pacific Islander, Native American.  The entropy index $E$ is calculated as follows (Farrell and Lee 2011):   -->
 
+About the data: The state of Arizona requires that all commercial agricultural pesticide applications, including all aerial applications, be reported to the state. In addition, growers and applicators must report all soil-applied applications of pesticides on the Arizona Department of Environmental Quality’s ground water protection list, and certain odiforous compounds.  Arizona’s Pesticide Use Registry, managed by the Arizona Department of Agriculture, reports information on active ingredient, acres, pounds applied, concentration, Public Land Survey Section (PLSS, location), and application method. The PLSS grid corresponds to approximately a 1 square mile resolution. To enhance this resolution, we linked reported pesticide applications to fields by linking the reported crop target on the PUR with crops from the United States Department of Agriculture’s CropScape rasters, a satellite-based rendering of crop identification, following methods previously used for the California PUR(60-62). We matched targeted crops for the relevant chemical on the pesticide use report, to the satellite-identified crop fields on the CropScape rasters, by year.
 
-To study how the total pesticide usage varies with geographical locationand time in the State of Arizona, the total pesticide usage in pounds are plotted against the geocode and time.   
-
-This application allows visitors to explore this part of the paper interactively.  The article follows by using local exploratory spatial data analysis techniques to identify how spatial clusters of diversity have shifted over time; this will be the focus of a future application that corresponds to an extension of the study published in _Urban Studies._  
-
+Here, we report organophosphate, pyrethroid, and carbamate pesticide applications in the state of Arizona for the years 2006-2016.
 
 The application is built with the [Shiny](http://shiny.rstudio.com) framework for the [R programming language](https://www.r-project.org/). The application layout is produced with the [flexdashboard](http://rstudio.github.io/flexdashboard/index.html) package, and the charts and maps use [Plotly](http://plot.ly), [Leaflet.js](http://leafletjs.com/), and [ggplot2](http://ggplot2.org/), all accessed through their corresponding R packages.  Code for the application is available at [Github](https://github.com/TuoooLiu666/Arizona-Pesticide-Usage-Map).  
 
-To learn more about my work, [visit my website](https://tuo-liu.netlify.app) or [connect with me on LinkedIn](https://www.linkedin.com/in/tuo-l-491782194/).  
+To learn more about my work, [visit my website](https://tuoooliu666.github.io/) or [connect with me on LinkedIn](https://www.linkedin.com/in/tuo-l-491782194/).  
+ 
 
